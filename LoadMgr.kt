@@ -9,7 +9,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import java.util.concurrent.PriorityBlockingQueue
 
-
 class LoadMgr {
     companion object {
         private const val TAG = "fly/LoadMgr"
@@ -82,7 +81,36 @@ class LoadMgr {
         }
     }
 
+    fun submit(priority: Priority = Priority.NORMAL, loader: Loader): LoadRequest {
+        val request = LoadRequest.Builder()
+            .priority(priority)
+            .loader(loader)
+            .build()
+
+        enqueue(request)
+
+        return request
+    }
+
+    fun submit(priority: Priority = Priority.NORMAL, func: () -> Unit): LoadRequest {
+        val loader = object : SimpleLoader() {
+            override fun worker() {
+                func.invoke()
+            }
+        }
+
+        val request = LoadRequest.Builder()
+            .priority(priority)
+            .loader(loader)
+            .build()
+
+        enqueue(request)
+
+        return request
+    }
+
     fun destroy() {
+        mPriorityBlockingQueue.clear()
         mChannel.cancel()
         mChannel.close()
     }
