@@ -36,7 +36,6 @@ open class LoadRequest {
 
     open fun cancel() {
         isCancelled = true
-
         listener?.onCancel(this)
     }
 
@@ -55,7 +54,7 @@ open class LoadRequest {
     interface Listener {
         fun onStart(request: LoadRequest?) {}
         fun onCancel(request: LoadRequest?) {}
-        fun onError() {}
+        fun onError(request: LoadRequest?, thr: Throwable) {}
         fun onSuccess(request: LoadRequest?, result: Any?) {}
     }
 

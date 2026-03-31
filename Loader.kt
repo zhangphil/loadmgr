@@ -25,7 +25,7 @@ open class Loader {
         return null
     }
 
-    open fun deliveryResult(result: Result<Any>?) {
+    open fun deliveryResult(result: Result<Any?>?) {
 
     }
 
