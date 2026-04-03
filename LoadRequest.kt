@@ -84,7 +84,7 @@ open class LoadRequest {
             return this
         }
 
-        fun listener(listener: Listener): Builder {
+        fun listener(listener: Listener?): Builder {
             this.listener = listener
             return this
         }

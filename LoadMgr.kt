@@ -14,7 +14,7 @@ class LoadMgr {
         private const val TAG = "fly/LoadMgr"
 
         val INSTANCE = LoadMgr()
-        val THREAD_POOL = newFixedThreadPoolContext(nThreads = 4, name = "线程")
+        private val THREAD_POOL = newFixedThreadPoolContext(nThreads = 6, name = "线程")
     }
 
     private val mChannel = Channel<LoadRequest>()
@@ -81,10 +81,15 @@ class LoadMgr {
         }
     }
 
-    fun submit(priority: Priority = Priority.NORMAL, loader: Loader): LoadRequest {
+    fun submit(
+        priority: Priority = Priority.NORMAL,
+        loader: Loader,
+        listener: LoadRequest.Listener? = null
+    ): LoadRequest? {
         val request = LoadRequest.Builder()
             .priority(priority)
             .loader(loader)
+            .listener(listener)
             .build()
 
         enqueue(request)
@@ -92,25 +97,23 @@ class LoadMgr {
         return request
     }
 
-    fun submit(priority: Priority = Priority.NORMAL, func: () -> Unit): LoadRequest {
+    fun submit(priority: Priority = Priority.NORMAL, loader: Loader): LoadRequest? {
+        return submit(priority, loader, null)
+    }
+
+    fun submit(priority: Priority = Priority.NORMAL, func: () -> Unit): LoadRequest? {
         val loader = object : SimpleLoader() {
             override fun worker() {
                 func.invoke()
             }
         }
 
-        val request = LoadRequest.Builder()
-            .priority(priority)
-            .loader(loader)
-            .build()
-
-        enqueue(request)
-
-        return request
+        return submit(priority, loader, null)
     }
 
     fun destroy() {
         mPriorityBlockingQueue.clear()
+
         mChannel.cancel()
         mChannel.close()
     }
