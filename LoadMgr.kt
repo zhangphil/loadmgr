@@ -39,11 +39,12 @@ class LoadMgr {
     }
 
     fun startup(threads: Int = mThreadCount) {
-        mExecutorCoroutine = newFixedThreadPoolContext(nThreads = threads, name = mThreadPoolName)
+        mThreadCount = threads
+        mExecutorCoroutine = newFixedThreadPoolContext(nThreads = mThreadCount, name = mThreadPoolName)
 
         //接收任务
         CoroutineScope(mExecutorCoroutine).launch {
-            println("$TAG Channel start... ThreadCount=$mThreadCount ${Thread.currentThread().name}")
+            println("$TAG start... mThreadCount=$mThreadCount ${Thread.currentThread().name}")
 
             mChannel.receiveAsFlow()
                 .onEach { it ->  //生产者
