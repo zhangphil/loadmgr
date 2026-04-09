@@ -43,7 +43,7 @@ class LoadMgr {
 
         //接收任务
         CoroutineScope(mExecutorCoroutine).launch {
-            println("$TAG Channel start... ${Thread.currentThread().name}")
+            println("$TAG Channel start... ThreadCount=$mThreadCount ${Thread.currentThread().name}")
 
             mChannel.receiveAsFlow()
                 .onEach { it ->  //生产者
