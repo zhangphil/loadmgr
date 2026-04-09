@@ -1,6 +1,7 @@
 package lib
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.onEach
@@ -14,9 +15,12 @@ class LoadMgr {
         private const val TAG = "fly/LoadMgr"
 
         val INSTANCE = LoadMgr()
-        private val THREAD_POOL = newFixedThreadPoolContext(nThreads = 6, name = "线程")
     }
 
+    private val mThreadPoolName="LoadMgr"
+    private var mThreadCount = 4
+
+    private lateinit var mExecutorCoroutine: ExecutorCoroutineDispatcher
     private val mChannel = Channel<LoadRequest>()
 
     private val bufferCapacity = 10
@@ -31,8 +35,14 @@ class LoadMgr {
     }
 
     fun startup() {
+        startup(mThreadCount)
+    }
+
+    fun startup(threads: Int = mThreadCount) {
+        mExecutorCoroutine = newFixedThreadPoolContext(nThreads = threads, name = mThreadPoolName)
+
         //接收任务
-        CoroutineScope(THREAD_POOL).launch {
+        CoroutineScope(mExecutorCoroutine).launch {
             println("$TAG Channel start... ${Thread.currentThread().name}")
 
             mChannel.receiveAsFlow()
@@ -53,7 +63,7 @@ class LoadMgr {
         println("$TAG 当前最大优先级任务:${loadRequest} ${Thread.currentThread().name}")
 
         loadRequest?.let {
-            CoroutineScope(THREAD_POOL).launch {
+            CoroutineScope(mExecutorCoroutine).launch {
                 val result = if (it.isCancelled()) {
                     println("$TAG id=${loadRequest.getId()} isCancelled=${it.isCancelled()}")
                     return@launch
@@ -75,7 +85,7 @@ class LoadMgr {
     }
 
     fun enqueue(taskInfo: LoadRequest) {
-        CoroutineScope(THREAD_POOL).launch {
+        CoroutineScope(mExecutorCoroutine).launch {
             mPriorityBlockingQueue.add(taskInfo)
             mChannel.send(taskInfo)
         }
