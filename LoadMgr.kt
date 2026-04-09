@@ -14,11 +14,11 @@ class LoadMgr {
     companion object {
         private const val TAG = "fly/LoadMgr"
 
+        const val DEFAULT_THREAD_SIZE = 4
         val INSTANCE = LoadMgr()
     }
 
     private val mThreadPoolName="LoadMgr"
-    private var mThreadCount = 4
 
     private lateinit var mExecutorCoroutine: ExecutorCoroutineDispatcher
     private val mChannel = Channel<LoadRequest>()
@@ -35,16 +35,15 @@ class LoadMgr {
     }
 
     fun startup() {
-        startup(mThreadCount)
+        startup(DEFAULT_THREAD_SIZE)
     }
 
-    fun startup(threads: Int = mThreadCount) {
-        mThreadCount = threads
-        mExecutorCoroutine = newFixedThreadPoolContext(nThreads = mThreadCount, name = mThreadPoolName)
+    fun startup(threads: Int) {
+        mExecutorCoroutine = newFixedThreadPoolContext(nThreads = threads, name = mThreadPoolName)
 
         //接收任务
         CoroutineScope(mExecutorCoroutine).launch {
-            println("$TAG start... mThreadCount=$mThreadCount ${Thread.currentThread().name}")
+            println("$TAG start... threads=$threads ${Thread.currentThread().name}")
 
             mChannel.receiveAsFlow()
                 .onEach { it ->  //生产者
