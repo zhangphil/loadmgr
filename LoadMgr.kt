@@ -125,10 +125,6 @@ class LoadMgr {
         return submit(priority, loader, listener)
     }
 
-    fun submit(priority: Priority,func: () -> Unit,){
-
-    }
-
     fun destroy() {
         mPriorityBlockingQueue.clear()
 
