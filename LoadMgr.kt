@@ -111,14 +111,22 @@ class LoadMgr {
         return submit(priority, loader, null)
     }
 
-    fun submit(priority: Priority = Priority.NORMAL, func: () -> Unit): LoadRequest? {
+    fun submit(
+        priority: Priority = Priority.NORMAL,
+        func: () -> Unit,
+        listener: LoadRequest.Listener? = null
+    ): LoadRequest? {
         val loader = object : SimpleLoader() {
             override fun worker() {
                 func.invoke()
             }
         }
 
-        return submit(priority, loader, null)
+        return submit(priority, loader, listener)
+    }
+
+    fun submit(priority: Priority,func: () -> Unit,){
+
     }
 
     fun destroy() {
