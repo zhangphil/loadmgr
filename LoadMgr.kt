@@ -59,9 +59,7 @@ class LoadMgr {
                     //collect, 这里相当于通过缓冲后匀速发射过来的触发器(trigger)。
                     //收集到的值在此并不重要，这里，只是把它作为触发信号。
                     println("$TAG collect-$it ${Thread.currentThread().name}")
-                    CoroutineScope(mExecutorCoroutine).launch {
-                        trigger()
-                    }
+                    trigger()
                 }
         }
     }
