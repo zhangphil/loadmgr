@@ -8,7 +8,9 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.PriorityBlockingQueue
+
 
 class LoadMgr {
     companion object {
@@ -18,7 +20,7 @@ class LoadMgr {
         val INSTANCE = LoadMgr()
     }
 
-    private val mThreadPoolName="LoadMgr"
+    private val mThreadPoolName = "LoadMgr"
 
     private lateinit var mExecutorCoroutine: ExecutorCoroutineDispatcher
     private val mChannel = Channel<LoadRequest>()
@@ -62,23 +64,34 @@ class LoadMgr {
         val loadRequest = mPriorityBlockingQueue.poll()
         println("$TAG 当前最大优先级任务:${loadRequest} ${Thread.currentThread().name}")
 
-        loadRequest?.let {
+        loadRequest?.let { it_loadRequest ->
             CoroutineScope(mExecutorCoroutine).launch {
-                val result = if (it.isCancelled()) {
-                    println("$TAG id=${loadRequest.getId()} isCancelled=${it.isCancelled()}")
+                val result = if (it_loadRequest.isCancelled()) {
+                    println("$TAG id=${loadRequest.getId()} isCancelled=${it_loadRequest.isCancelled()}")
                     return@launch
                 } else {
-                    it.getListener()?.onStart(it)
-                    it.getLoader()?.doInBackground()
+                    it_loadRequest.getListener()?.onStart(it_loadRequest)
+                    val timeout = loadRequest.getTimeout()
+                    if (timeout > 0) {
+                        runCatching {
+                            withTimeoutOrNull(timeout) {
+                                it_loadRequest.getLoader()?.doInBackground()
+                            }
+                        }.onFailure { it_throwable ->
+                            print("$it_throwable $loadRequest")
+                        }.getOrNull()
+                    } else {
+                        it_loadRequest.getLoader()?.doInBackground()
+                    }
                 }
 
                 println("$TAG id=${loadRequest} doInBackground完成 isCancelled=${loadRequest.isCancelled()} ${Thread.currentThread().name}")
-                if (it.isCancelled()) {
+                if (it_loadRequest.isCancelled()) {
                     // do noting
                 } else {
-                    it.getListener()?.onSuccess(it, result)
+                    it_loadRequest.getListener()?.onSuccess(it_loadRequest, result)
                     println("$TAG deliveryResult loadRequest=${loadRequest} ${Thread.currentThread().name}")
-                    it.getLoader()?.deliveryResult(result)
+                    it_loadRequest.getLoader()?.deliveryResult(result)
                 }
             }
         }
@@ -123,6 +136,24 @@ class LoadMgr {
         }
 
         return submit(priority, loader, listener)
+    }
+
+    fun submit(priority: Priority = Priority.NORMAL, timeout: Long, func: () -> Unit): LoadRequest? {
+        val loader = object : SimpleLoader() {
+            override fun worker() {
+                func.invoke()
+            }
+        }
+
+        val request = LoadRequest.Builder()
+            .priority(priority)
+            .loader(loader)
+            .timeout(timeout)
+            .build()
+
+        enqueue(request)
+
+        return request
     }
 
     fun destroy() {

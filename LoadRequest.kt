@@ -9,6 +9,7 @@ open class LoadRequest {
     private var priority: Priority? = null
     private var listener: Listener? = null
     private var isCancelled = false
+    private var timeout: Long = 0L
 
     private constructor() {
 
@@ -32,6 +33,10 @@ open class LoadRequest {
 
     fun getPriority(): Priority? {
         return priority
+    }
+
+    fun getTimeout(): Long {
+        return timeout
     }
 
     open fun cancel() {
@@ -64,6 +69,7 @@ open class LoadRequest {
         private var loader: Loader? = null
         private var priority: Priority? = Priority.NORMAL
         private var listener: Listener? = null
+        private var timeout: Long = 0L
 
         constructor() {
 
@@ -94,6 +100,11 @@ open class LoadRequest {
             return this
         }
 
+        fun timeout(timeout: Long): Builder {
+            this.timeout = timeout
+            return this
+        }
+
         fun build(): LoadRequest {
             val request = LoadRequest()
             request.id = id
@@ -101,6 +112,7 @@ open class LoadRequest {
             request.loader = loader
             request.priority = priority
             request.listener = listener
+            request.timeout = timeout
             return request
         }
     }
